@@ -1,0 +1,9 @@
+[tool.basedpyright]
+include = ["."]
+exclude = ["**/__pycache__", "**/.venv", "**/venv", "**/env"]
+venvPath = "."
+venv = "env"
+typeCheckingMode = "standard"
+pythonVersion = "3.14"
+reportMissingImports = true
+reportMissingTypeStubs = false

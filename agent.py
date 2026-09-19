@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 load_dotenv()
 
-MEMORY_MAX_MESSAGES=10
+MEMORY_MAX_MESSAGES = 10
 
 api_key = os.environ.get("GROQ_API_KEY")
 client = Groq(api_key=api_key)
@@ -37,51 +37,51 @@ TOOLS = [
                 "properties": {
                     "ciudad": {
                         "type": "string",
-                        "description": "La ciudad de la cual se desea obtener el clima"
+                        "description": "La ciudad de la cual se desea obtener el clima",
                     },
                 },
-                "required": ["ciudad"]
-            }
-        }
+                "required": ["ciudad"],
+            },
+        },
     }
 ]
 
 print("Agente de IA")
 
-def process_response(client:Groq, memory_messages: list[dict], user_text:str):
-    #Obtener la memoria
+
+def process_response(client: Groq, memory_messages: list[dict], user_text: str):
+    # Obtener la memoria
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     messages.extend(memory_messages)
     messages.append({"role": "user", "content": user_text})
-    
+
     while True:
         resp = client.chat.completions.create(
-            model="qwen/qwen3-32b",
-            messages=messages,
-            tools=TOOLS
+            model="qwen/qwen3-32b", messages=messages, tools=TOOLS
         )
 
         msg = resp.choices[0].message
-        
-        #Si no hay llamados a herramientas, entonces ya regresamos la respuesta
+
+        # Si no hay llamados a herramientas, entonces ya regresamos la respuesta
         if not getattr(msg, "tool_calls", None):
             return msg.content or ""
-        
-        messages.append({
-            "role": "assistant",
-            "content": msg.content or "",
-            "tool_calls": [tc.model_dump() for tc in msg.tool_calls]
-        })
-        
+
+        messages.append(
+            {
+                "role": "assistant",
+                "content": msg.content or "",
+                "tool_calls": [tc.model_dump() for tc in msg.tool_calls],
+            }
+        )
+
         for tool_call in msg.tool_calls:
             name = tool_call.function.name
             args = json.loads(tool_call.function.arguments or "{}")
-            
+
             if name == "check_availability":
                 tools = Tools()
                 result = tools.check_availability(
-                    time_ini=args["time_ini"],
-                    time_end=args["time_end"]
+                    time_ini=args["time_ini"], time_end=args["time_end"]
                 )
             elif name == "create_event":
                 tools = Tools()
@@ -89,33 +89,35 @@ def process_response(client:Groq, memory_messages: list[dict], user_text:str):
                     summary=args["summary"],
                     start=args["start"],
                     end=args["end"],
-                    description=args.get("description", "")
+                    description=args.get("description", ""),
                 )
             else:
                 print(f"Se intentó llamar a una herramienta desconocida {name}")
                 result = {"error": f"Herramienta desconocida: {name}"}
-                
-            #Agregar a los mensajes el resultao del llamado de la herramienta.
-            #Esto lo recibirá el modelo al continuar la iteración
-            messages.append({
-                "role": "tool",
-                "tool_call_id": tool_call.id,
-                "content": json.dumps(result, ensure_ascii=False)
-            })
+
+            # Agregar a los mensajes el resultao del llamado de la herramienta.
+            # Esto lo recibirá el modelo al continuar la iteración
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "content": json.dumps(result, ensure_ascii=False),
+                }
+            )
+
 
 while True:
-    
     user_text = input("Tú: ").strip()
     if not user_text:
         continue
-    
+
     if user_text.lower() in ("exit", "salir"):
         print("Hasta luego!")
         break
-    
+
     assistant_text = process_response(client, memory.messages(), user_text)
     print(f"Asistente: {assistant_text}")
-    
-    #Actualizar la memoria
+
+    # Actualizar la memoria
     memory.add("user", user_text)
     memory.add("assistant", assistant_text)
