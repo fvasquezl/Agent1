@@ -91,7 +91,11 @@ def process_response(client: Groq, memory_messages: list[dict], user_text: str):
                 {
                     "role": "tool",
                     "tool_call_id": tool_call.id,
-                    "content": json.dumps(result, ensure_ascii=False),
+                    "content": (
+                        result
+                        if isinstance(result, str)
+                        else json.dumps(result, ensure_ascii=False)
+                    ),
                 }
             )
 
