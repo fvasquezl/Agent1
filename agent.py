@@ -1,7 +1,5 @@
 import json
 import os
-from datetime import datetime
-from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
 from groq import Groq
@@ -17,7 +15,6 @@ MEMORY_MAX_MESSAGES = 10
 api_key = os.environ.get("GROQ_API_KEY")
 client = Groq(api_key=api_key)
 memory = SimpleMemory(max_messages=MEMORY_MAX_MESSAGES)
-now = datetime.now(ZoneInfo("America/Tijuana"))
 SYSTEM_PROMPT = """
 Eres un asistente que habla en español y responde de manera muy breve y concisa.
 

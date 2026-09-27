@@ -23,7 +23,6 @@ There is no test suite, linter config, or build step in this repo. `pyproject.to
 - Tool dispatch inside `process_response()` is an `if/elif` on `tool_call.function.name` (currently only `obtener_clima` → `Tools().obtener_clima(ciudad=...)`); anything else falls through to the "herramienta desconocida" branch. When adding tools, the `TOOLS` schema, `SYSTEM_PROMPT`, and this dispatch block all need to be kept in sync.
 - **`tools.py`**'s `Tools` class currently has a single mocked method, `obtener_clima(ciudad)`, which returns a hardcoded Spanish string (a "beautiful" message for Tijuana, case-insensitive; a "horrible" message for any other city). No external API is called.
 - **`simple_memory.py`**'s `SimpleMemory` is a fixed-size `deque` (default `maxlen=10`, set via `MEMORY_MAX_MESSAGES` in `agent.py`) of `{role, content}` dicts — a naive sliding window, no summarization or token-aware trimming. Tool-call messages are not persisted into this memory; only the final user/assistant text turns are added after `process_response` returns.
-- `agent.py` computes `now` in the `America/Tijuana` timezone at import time but does not currently use it anywhere.
 
 ## History
 
