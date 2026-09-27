@@ -1,13 +1,16 @@
-from dotenv import load_dotenv
-from groq import Groq
-import os
-from simple_memory import SimpleMemory
 import json
-from tools import Tools
+import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from dotenv import load_dotenv
+from groq import Groq
+
+from simple_memory import SimpleMemory
+from tools import Tools
+
 load_dotenv()
+
 
 MEMORY_MAX_MESSAGES = 10
 
@@ -18,7 +21,7 @@ now = datetime.now(ZoneInfo("America/Tijuana"))
 SYSTEM_PROMPT = """
 Eres un asistente que habla en español y responde de manera muy breve y concisa.
 
-herramientas
+Herramientas
 - Cuentas con una herramienta llamada obtener clima, la cual te da el clima actual para cualquier ciudad
 Al llamar a esta herramienta, la ciudad es obligatoria.
 La respuesta que te dé esta herramienta debes regresarla tal cual, considerando que es correcta.
@@ -57,7 +60,7 @@ def process_response(client: Groq, memory_messages: list[dict], user_text: str):
 
     while True:
         resp = client.chat.completions.create(
-            model="qwen/qwen3-32b", messages=messages, tools=TOOLS
+            model="openai/gpt-oss-120b", messages=messages, tools=TOOLS
         )
 
         msg = resp.choices[0].message
@@ -78,19 +81,9 @@ def process_response(client: Groq, memory_messages: list[dict], user_text: str):
             name = tool_call.function.name
             args = json.loads(tool_call.function.arguments or "{}")
 
-            if name == "check_availability":
+            if name == "obtener_clima":
                 tools = Tools()
-                result = tools.check_availability(
-                    time_ini=args["time_ini"], time_end=args["time_end"]
-                )
-            elif name == "create_event":
-                tools = Tools()
-                result = tools.create_event(
-                    summary=args["summary"],
-                    start=args["start"],
-                    end=args["end"],
-                    description=args.get("description", ""),
-                )
+                result = tools.obtener_clima(ciudad=args["ciudad"])
             else:
                 print(f"Se intentó llamar a una herramienta desconocida {name}")
                 result = {"error": f"Herramienta desconocida: {name}"}
