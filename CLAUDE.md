@@ -27,4 +27,4 @@ There is no test suite, linter config, or build step in this repo. `pyproject.to
 
 ## History
 
-An earlier version (commit `1ab8662` and before) had Google Calendar tools in `tools.py` (`check_availability` via `freebusy.query`, `create_event` via `events.insert`, OAuth installed-app flow with `credentials.json` → `token.json`). These were removed in favor of the mocked weather tool. The Google client libraries are still pinned in `requirements.txt` but are no longer imported.
+An earlier version (commit `1ab8662` and before) had Google Calendar tools in `tools.py` (`check_availability` via `freebusy.query`, `create_event` via `events.insert`, OAuth installed-app flow with `credentials.json` → `token.json`). These were removed in favor of the mocked weather tool.
