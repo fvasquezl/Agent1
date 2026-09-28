@@ -19,31 +19,56 @@ SYSTEM_PROMPT = """
 Eres un asistente que habla en español y responde de manera muy breve y concisa.
 
 Herramientas
-- Cuentas con una herramienta llamada obtener clima, la cual te da el clima actual para cualquier ciudad
-Al llamar a esta herramienta, la ciudad es obligatoria.
-La respuesta que te dé esta herramienta debes regresarla tal cual, considerando que es correcta.
+- Cuentas con una herramienta llamada obtener_clima_api, la cual te da el clima actual para cualquier ciudad.
+  Requiere indicar la latitud y longitud
+- Cuentas con una herramienta llamada obtener_lat_long, la cual te propociona la latitud y la longitud de una ciudad.
+  Requiere indicar  el nombre de la ciudad
 """
 TOOLS = [
     {
         "type": "function",
         "function": {
-            "name": "obtener_clima",
+            "name": "obtener_clima_api",
             "description": (
-                "Llama a esta funcion para obtener el clima actual en cualquier lugar. "
-                "Se debe enviar como argumento el nombre de la ciudad de donde se desea obtener el clima "
+                "Llama a esta funcion para obtener el latitud y longitus de una ciudad."
+                "Es necesario indicar el nombre de la ciudad"
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "lat": {
+                        "type": "string",
+                        "description": "La latitud de donde se desea obtener el clima",
+                    },
+                    "long": {
+                        "type": "string",
+                        "description": "La longitud de donde se desea obtener el clima",
+                    },
+                },
+                "required": ["lat", "long"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "obtener_lat_long",
+            "description": (
+                "Llama a esta funcion para obtener la latitud y longitud de cualquier lugar. "
+                "Se debe enviar como argumento la ciudad"
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "ciudad": {
                         "type": "string",
-                        "description": "La ciudad de la cual se desea obtener el clima",
+                        "description": "La ciudad de donde se desea obtener la latitud y longitud",
                     },
                 },
                 "required": ["ciudad"],
             },
         },
-    }
+    },
 ]
 
 print("Agente de IA")
@@ -51,7 +76,7 @@ print("Agente de IA")
 
 def process_response(client: Groq, memory_messages: list[dict], user_text: str):
     # Obtener la memoria
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages: list[dict[str, str]] = [{"role": "system", "content": SYSTEM_PROMPT}]
     messages.extend(memory_messages)
     messages.append({"role": "user", "content": user_text})
 
@@ -78,9 +103,12 @@ def process_response(client: Groq, memory_messages: list[dict], user_text: str):
             name = tool_call.function.name
             args = json.loads(tool_call.function.arguments or "{}")
 
-            if name == "obtener_clima":
+            if name == "obtener_clima_api":
                 tools = Tools()
-                result = tools.obtener_clima(ciudad=args["ciudad"])
+                result = tools.obtener_clima_api(lat=args["lat"], long=args["long"])
+            elif name == "obtener_lat_long":
+                tools = Tools()
+                result = tools.obtener_lat_long(ciudad=args["ciudad"])
             else:
                 print(f"Se intentó llamar a una herramienta desconocida {name}")
                 result = {"error": f"Herramienta desconocida: {name}"}
