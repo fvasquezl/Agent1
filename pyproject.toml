@@ -1,8 +1,23 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent1"
+version = "0.1.0"
+description = "Agente de chat en español con tool calling sobre la API de Groq"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = ["groq", "python-dotenv", "requests"]
+
+[project.scripts]
+agent1 = "agent1.cli:main"
+
 [tool.basedpyright]
-include = ["."]
+include = ["src"]
 exclude = ["**/__pycache__", "**/.venv", "**/venv", "**/env"]
 venvPath = "."
-venv = "env"
+venv = "venv"
 typeCheckingMode = "standard"
 pythonVersion = "3.14"
 reportMissingImports = true

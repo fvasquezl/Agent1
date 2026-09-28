@@ -2,7 +2,13 @@
 
 Agente de chat en español para la terminal, construido sobre la API de [Groq](https://groq.com/) (compatible con OpenAI). El agente puede llamar herramientas (*tool calling*) y recuerda los últimos mensajes de la conversación.
 
-Por ahora incluye una sola herramienta de ejemplo, `obtener_clima`, que devuelve respuestas fijas (no consulta ningún servicio real de clima).
+Herramientas incluidas (usan APIs públicas, sin API key):
+
+| Herramienta | Qué hace | API |
+|---|---|---|
+| `obtener_lat_long` | Latitud y longitud de una ciudad | [Open-Meteo Geocoding](https://open-meteo.com/en/docs/geocoding-api) |
+| `obtener_clima_api` | Clima actual en unas coordenadas | [Open-Meteo](https://open-meteo.com/) |
+| `obtener_tipo_cambio` | Tipo de cambio de una moneda (ISO 4217) | [ExchangeRate-API](https://www.exchangerate-api.com/docs/free) |
 
 ## Requisitos
 
@@ -14,9 +20,10 @@ Por ahora incluye una sola herramienta de ejemplo, `obtener_clima`, que devuelve
 ```bash
 git clone https://github.com/fvasquezl/Agent1.git
 cd Agent1
-python -m venv env
-source env/bin/activate
-pip install -r requirements.txt
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt   # versiones exactas probadas
+pip install -e .                  # instala el paquete agent1 en modo editable
 ```
 
 Crea un archivo `.env` en la raíz del proyecto con tu API key:
@@ -30,37 +37,43 @@ El archivo `.env` está en `.gitignore`, así que no se sube al repositorio.
 ## Uso
 
 ```bash
-source env/bin/activate
-python agent.py
+source venv/bin/activate
+agent1            # o: python -m agent1
 ```
 
-Escribe tus mensajes después de `Tú:`. Para salir escribe `salir` o `exit`.
+Escribe tus mensajes después de `Tú:`. Para salir escribe `salir` o `exit` (o `Ctrl+C`).
 
 ```
 Agente de IA
-Tú: ¿Cómo está el clima en Tijuana?
-Herramienta obtener_clima llamada con Tijuana
-Asistente: La temperatura actual en Tijuana es demasiado hermosa para ser verdad
-Tú: ¿Y en Monterrey?
-Herramienta obtener_clima llamada con Monterrey
-Asistente: La temperatura actual en Monterrey es horripilante
+Tú: ¿Qué clima hace en Tijuana y cuántos pesos mexicanos vale un dólar?
+Herramienta obtener_lat_long llamada con Tijuana
+Herramienta obtener_clima_api llamada con 32.5027 y -117.00371
+Herramienta obtener_tipo_cambio llamada con USD
+Asistente: En Tijuana: 26 °C, viento 13 km/h, cielo claro.
+1 USD ≈ 17.74 MXN.
 Tú: salir
 Hasta luego!
 ```
 
 ## Estructura
 
-| Archivo | Descripción |
-|---|---|
-| `agent.py` | Ciclo de chat, prompt del sistema, definición de herramientas (`TOOLS`) y ciclo de llamadas a herramientas. Usa el modelo `openai/gpt-oss-120b`. |
-| `tools.py` | Clase `Tools` con la implementación de las herramientas. |
-| `simple_memory.py` | Memoria de conversación: guarda los últimos 10 mensajes (configurable con `MEMORY_MAX_MESSAGES` en `agent.py`). |
+```
+src/agent1/
+├── __main__.py        # permite `python -m agent1`
+├── cli.py             # bucle "Tú: / Asistente:" (comando `agent1`)
+├── config.py          # carga .env, modelo y tamaño de memoria
+├── agent.py           # clase Agent: ciclo de tool calling
+├── memory.py          # memoria de los últimos N mensajes
+└── tools/
+    ├── __init__.py    # ALL_TOOLS: registro de herramientas
+    ├── base.py        # dataclass Tool (esquema + función)
+    ├── clima.py
+    └── tipo_cambio.py
+```
 
 ## Agregar una herramienta
 
-1. Implementa el método en la clase `Tools` de `tools.py`.
-2. Declara su esquema en la lista `TOOLS` de `agent.py`.
-3. Agrega su rama en el `if/elif` de `process_response()` en `agent.py`.
-4. Descríbela en `SYSTEM_PROMPT` para que el modelo sepa cuándo usarla.
+1. Crea un módulo en `src/agent1/tools/` con la función y una lista `TOOLS` de objetos `Tool` (nombre, descripción, parámetros JSON Schema y la función).
+2. Agrega su `TOOLS` a `ALL_TOOLS` en `src/agent1/tools/__init__.py`.
 
-Si falta el paso 3, el agente responde con el error "Herramienta desconocida".
+El agente arma los esquemas y despacha las llamadas a partir de ese registro; no hay que tocar `agent.py`.
